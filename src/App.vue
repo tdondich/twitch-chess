@@ -1,10 +1,10 @@
 <template>
   <div id="app">
-    <p>{{status}} - {{turn == 'B' ? 'Black' : 'White'}}'s Move</p>
+    <p>{{status}} - {{turn == 'B' ? 'Black' : 'White'}}'s Move <span class="check" v-if="check">CHECK</span></p>
     
     <table id="board" class="table table-bordered" v-if="position">
       <tr v-for="(index, count) in position.board.length / 8" :key="count">
-        <td @click="handleClick(((8 * (7 - count)) + parseInt(idx)))" v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !(idx + count) % 2, selected: selected == ((8 * (7 - count)) + parseInt(idx)) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
+        <td @click="handleClick(((8 * (7 - count)) + parseInt(idx)))" v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !(idx + count) % 2, selected: selected == ((8 * (7 - count)) + parseInt(idx)), available: isAvailable(((8 * (7 - count)) + parseInt(idx))) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
           <span v-if="value" v-html="charCode(value.side, value.type)"></span>
         </td>
       </tr>
@@ -21,28 +21,58 @@ export default {
     return {
       rules: chessRules,
       position: null,
-      status: null,
       turn: 'W', // Turn dictates who's turn it is 
-      selected: null // Index to select
+      selected: null, // Index to select
+      availableMoves: []
     }
   },
   computed: {
-    // No computed properties yet
+    status: function () {
+      return this.rules.getGameStatus(this.position)
+    },
+    check: function () {
+      return this.position.check
+    }
   },
   created: function () {
     this.position = this.rules.getInitialPosition();
-    console.log(this.position.board);
     // Set initial game status
-    this.status = this.rules.getGameStatus(this.position);
   },
   methods: {
+    isAvailable (index) {
+      return this.availableMoves.indexOf(index) !== -1
+    },
     handleClick (index) {
+      // First check to see if the index is inside availableMoves. If so, we're actually 
+      // in the process of moving a piece
+      let src = this.availableMoves.indexOf(index)
+      if (src !== -1) {
+        // It's an available move, let's update the positioning and then update board
+        this.position = this.rules.applyMove(this.position, {
+          src: this.selected,
+          dst: index
+        })
+        // Reset
+        this.availableMoves = []
+        this.selected = null
+        this.turn = this.turn === 'W' ? 'B' : 'W'
+        return
+      }
       // Check to see if the cell clicked is inhabited by a piece in control
       let piece = this.position.board[index]
       if (piece) {
         // Check to see if this piece belongs to person in play
         if (piece.side === this.turn) {
           this.selected = index
+          // Get possible moves
+          this.availableMoves = []
+          let availableMoves = this.rules.getAvailableMoves(this.position);
+          for (let count in availableMoves) {
+            let item = availableMoves[count]
+            if (item.src === index) {
+              this.availableMoves.push(item.dst)
+            }
+          }
         }
       }
     },
@@ -121,5 +151,12 @@ td {
   td.selected {
     background-color: red;
   }
+  td.available {
+    background-color: green;
+  }
+}
+
+.check {
+  font-weight: bold;
 }
 </style>

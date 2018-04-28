@@ -3,8 +3,8 @@
     <p>{{status}}</p>
     <table id="board" class="table table-bordered" v-if="position">
       <tr v-for="(index, count) in position.board.length / 8" :key="count">
-        <td :class="(idx + count) % 2 ? 'black': 'white'" v-for="(value, idx) in position.board.slice(8 * count, (8 * count) + 8)" :key="idx">
-          <span v-if="value" v-html="charCode(value.type)"></span>
+        <td :class="(idx + count) % 2 ? 'black': 'white'" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
+          <span v-if="value" v-html="charCode(value.side, value.type)"></span>
         </td>
       </tr>
     </table>
@@ -33,20 +33,39 @@ export default {
     this.status = this.rules.getGameStatus(this.position);
   },
   methods: {
-    charCode (type) {
-      switch (type) {
-        case 'R':
-          return '&#9814;'
-        case 'N':
-          return '&#9816;'
-        case 'B':
-          return '&#9821;'
-        case 'Q':
-          return '&#9819;'
-        case 'K':
-          return '&#9818;'
-        case 'P':
-          return '&#9823;'
+    charCode (side, type) {
+      if (side === 'W') {
+        switch (type) {
+          case 'R':
+            return '&#9814;'
+          case 'N':
+            return '&#9816;'
+          case 'B':
+            return '&#9815;'
+          case 'Q':
+            return '&#9813;'
+          case 'K':
+            return '&#9812;'
+          case 'P':
+            return '&#9817;'
+        }
+      } else {
+        // Black
+        switch (type) {
+          case 'R':
+            return '&#9820;'
+          case 'N':
+            return '&#9822;'
+          case 'B':
+            return '&#9821;'
+          case 'Q':
+            return '&#9819;'
+          case 'K':
+            return '&#9818;'
+          case 'P':
+            return '&#9823;'
+        }
+ 
       }
     }
   }

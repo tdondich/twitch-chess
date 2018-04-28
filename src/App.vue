@@ -1,9 +1,10 @@
 <template>
   <div id="app">
-    <p>{{status}}</p>
+    <p>{{status}} - {{turn == 'B' ? 'Black' : 'White'}}'s Move</p>
+    
     <table id="board" class="table table-bordered" v-if="position">
       <tr v-for="(index, count) in position.board.length / 8" :key="count">
-        <td :class="(idx + count) % 2 ? 'black': 'white'" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
+        <td @click="handleClick(((8 * (7 - count)) + parseInt(idx)))" v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !(idx + count) % 2, selected: selected == ((8 * (7 - count)) + parseInt(idx)) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
           <span v-if="value" v-html="charCode(value.side, value.type)"></span>
         </td>
       </tr>
@@ -20,7 +21,9 @@ export default {
     return {
       rules: chessRules,
       position: null,
-      status: null
+      status: null,
+      turn: 'W', // Turn dictates who's turn it is 
+      selected: null // Index to select
     }
   },
   computed: {
@@ -33,6 +36,16 @@ export default {
     this.status = this.rules.getGameStatus(this.position);
   },
   methods: {
+    handleClick (index) {
+      // Check to see if the cell clicked is inhabited by a piece in control
+      let piece = this.position.board[index]
+      if (piece) {
+        // Check to see if this piece belongs to person in play
+        if (piece.side === this.turn) {
+          this.selected = index
+        }
+      }
+    },
     charCode (side, type) {
       if (side === 'W') {
         switch (type) {
@@ -85,6 +98,7 @@ export default {
 
 td {
   font-size: 48px;
+  cursor: pointer;
 }
 
 #board {
@@ -103,6 +117,9 @@ td {
 
   td.white {
     background-color: white;
+  }
+  td.selected {
+    background-color: red;
   }
 }
 </style>

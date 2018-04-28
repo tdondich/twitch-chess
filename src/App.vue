@@ -1,7 +1,9 @@
 <template>
   <div id="app">
-    <p>{{status}} - {{turn == 'B' ? 'Black' : 'White'}}'s Move <span class="check" v-if="check">CHECK</span></p>
-    
+    <p>{{status}} - {{turn == 'B' ? 'Black' : 'White'}}'s Move
+      <span class="check" v-if="check">CHECK</span>
+    </p>
+
     <table id="board" class="table table-bordered" v-if="position">
       <tr v-for="(index, count) in position.board.length / 8" :key="count">
         <td @click="handleClick(((8 * (7 - count)) + parseInt(idx)))" v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !(idx + count) % 2, selected: selected == ((8 * (7 - count)) + parseInt(idx)), available: isAvailable(((8 * (7 - count)) + parseInt(idx))) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
@@ -13,102 +15,195 @@
 </template>
 
 <script>
-let chessRules = require('chess-rules')
+let chessRules = require("chess-rules");
+
+let config = require("./config").default;
 
 export default {
-  name: 'App',
-  data: function () {
+  name: "App",
+  data: function() {
     return {
       rules: chessRules,
       position: null,
-      turn: 'W', // Turn dictates who's turn it is 
+      turn: "W", // Turn dictates who's turn it is
       selected: null, // Index to select
       availableMoves: []
-    }
+    };
   },
   computed: {
-    status: function () {
-      return this.rules.getGameStatus(this.position)
+    status: function() {
+      return this.rules.getGameStatus(this.position);
     },
-    check: function () {
-      return this.position.check
+    check: function() {
+      return this.position.check;
     }
   },
-  created: function () {
+  created: function() {
     this.position = this.rules.getInitialPosition();
     // Set initial game status
+
+    // Create a websocket to twitch
+    this.webSocket = new WebSocket(
+      "wss://" + config.server + ":" + config.port + "/",
+      "irc"
+    );
+
+    this.webSocket.onmessage = this.socketMessage;
+    this.webSocket.onerror = this.socketError;
+    this.webSocket.onclose = this.socketClose;
+    this.webSocket.onopen = this.socketOpen;
   },
   methods: {
-    isAvailable (index) {
-      return this.availableMoves.indexOf(index) !== -1
+    socketError (message) {
+      console.log('Error: ' + message)
     },
-    handleClick (index) {
-      // First check to see if the index is inside availableMoves. If so, we're actually 
+    socketClose () {
+      console.log('Disconnected from the chat server.');
+    },
+    socketOpen () {
+      let socket = this.webSocket;
+      if (socket !== null && socket.readyState === 1) {
+        console.log("Connecting and authenticating...");
+
+        socket.send(
+          "CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership"
+        );
+        socket.send("PASS " + config.password);
+        socket.send("NICK " + config.username);
+        socket.send('JOIN #adventuresinprogramming')
+      }
+    },
+    socketMessage(message) {
+      if (message !== null) {
+        console.log("INC: " + message.data);
+        var parsed = this.parseMessage(message.data);
+        if (parsed !== null) {
+          if (parsed.message && this.turn === 'B') {
+            console.log("Attempting move from streamers: " + parsed.message)
+            // Only allow streamers to play black
+            let move = this.rules.pgnToMove(this.position, parsed.message.trim())
+            console.log("Move: " + move);
+            if (move) {
+              // Perform move
+              this.position = this.rules.applyMove(this.position, move)
+              // Reset
+              this.availableMoves = [];
+              this.selected = null;
+              this.turn = this.turn === "W" ? "B" : "W";
+              return;
+            }
+          }
+          if (parsed.command === "PING") {
+            // Handle IRC PONG
+            this.webSocket.send("PONG :" + parsed.message);
+          }
+        }
+      }
+    },
+    parseMessage(rawMessage) {
+      var parsedMessage = {
+        message: null,
+        tags: null,
+        command: null,
+        original: rawMessage,
+        channel: null,
+        username: null
+      };
+
+      if (rawMessage[0] === "@") {
+        var tagIndex = rawMessage.indexOf(" "),
+          userIndex = rawMessage.indexOf(" ", tagIndex + 1),
+          commandIndex = rawMessage.indexOf(" ", userIndex + 1),
+          channelIndex = rawMessage.indexOf(" ", commandIndex + 1),
+          messageIndex = rawMessage.indexOf(":", channelIndex + 1);
+
+        parsedMessage.tags = rawMessage.slice(0, tagIndex);
+        parsedMessage.username = rawMessage.slice(
+          tagIndex + 2,
+          rawMessage.indexOf("!")
+        );
+        parsedMessage.command = rawMessage.slice(userIndex + 1, commandIndex);
+        parsedMessage.channel = rawMessage.slice(
+          commandIndex + 1,
+          channelIndex
+        );
+        parsedMessage.message = rawMessage.slice(messageIndex + 1);
+      } else if (rawMessage.startsWith("PING")) {
+        parsedMessage.command = "PING";
+        parsedMessage.message = rawMessage.split(":")[1];
+      }
+
+      return parsedMessage;
+    },
+    isAvailable(index) {
+      return this.availableMoves.indexOf(index) !== -1;
+    },
+    handleClick(index) {
+      // First check to see if the index is inside availableMoves. If so, we're actually
       // in the process of moving a piece
-      let src = this.availableMoves.indexOf(index)
+      let src = this.availableMoves.indexOf(index);
       if (src !== -1) {
         // It's an available move, let's update the positioning and then update board
         this.position = this.rules.applyMove(this.position, {
           src: this.selected,
           dst: index
-        })
+        });
         // Reset
-        this.availableMoves = []
-        this.selected = null
-        this.turn = this.turn === 'W' ? 'B' : 'W'
-        return
+        this.availableMoves = [];
+        this.selected = null;
+        this.turn = this.turn === "W" ? "B" : "W";
+        return;
       }
       // Check to see if the cell clicked is inhabited by a piece in control
-      let piece = this.position.board[index]
+      let piece = this.position.board[index];
       if (piece) {
         // Check to see if this piece belongs to person in play
         if (piece.side === this.turn) {
-          this.selected = index
+          this.selected = index;
           // Get possible moves
-          this.availableMoves = []
+          this.availableMoves = [];
           let availableMoves = this.rules.getAvailableMoves(this.position);
           for (let count in availableMoves) {
-            let item = availableMoves[count]
+            let item = availableMoves[count];
             if (item.src === index) {
-              this.availableMoves.push(item.dst)
+              this.availableMoves.push(item.dst);
             }
           }
         }
       }
     },
-    charCode (side, type) {
-      if (side === 'W') {
+    charCode(side, type) {
+      if (side === "W") {
         switch (type) {
-          case 'R':
-            return '&#9814;'
-          case 'N':
-            return '&#9816;'
-          case 'B':
-            return '&#9815;'
-          case 'Q':
-            return '&#9813;'
-          case 'K':
-            return '&#9812;'
-          case 'P':
-            return '&#9817;'
+          case "R":
+            return "&#9814;";
+          case "N":
+            return "&#9816;";
+          case "B":
+            return "&#9815;";
+          case "Q":
+            return "&#9813;";
+          case "K":
+            return "&#9812;";
+          case "P":
+            return "&#9817;";
         }
       } else {
         // Black
         switch (type) {
-          case 'R':
-            return '&#9820;'
-          case 'N':
-            return '&#9822;'
-          case 'B':
-            return '&#9821;'
-          case 'Q':
-            return '&#9819;'
-          case 'K':
-            return '&#9818;'
-          case 'P':
-            return '&#9823;'
+          case "R":
+            return "&#9820;";
+          case "N":
+            return "&#9822;";
+          case "B":
+            return "&#9821;";
+          case "Q":
+            return "&#9819;";
+          case "K":
+            return "&#9818;";
+          case "P":
+            return "&#9823;";
         }
- 
       }
     }
   }
@@ -139,7 +234,6 @@ td {
     height: 48px;
     width: 48px;
     line-height: 48px;
-
   }
   td.black {
     background-color: grey;

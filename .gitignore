@@ -15,3 +15,5 @@ yarn-error.log*
 *.sln
 
 src/config.js
+storage/*
+config/config.json

@@ -17,3 +17,5 @@ yarn-error.log*
 src/config.js
 storage/*
 config/config.json
+public/build
+public/index.html

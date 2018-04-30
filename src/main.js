@@ -10,6 +10,7 @@ window.Bootstrap = Bootstrap;
 
 Vue.config.productionTip = false
 
+console.log("Binding Vue component")
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

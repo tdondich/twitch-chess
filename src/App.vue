@@ -1,57 +1,106 @@
 <template>
   <div id="app">
+    <h1>Twitch Plays Chess</h1>
+    <div v-if="position">
     <p>{{status}} - {{turn == 'B' ? 'Black' : 'White'}}'s Move
       <span class="check" v-if="check">CHECK</span>
     </p>
 
+    <div class="row">
+      <div class="col-sm">
     <table id="board" class="table table-bordered" v-if="position">
+      <tr>
+        <th></th>
+        <th>a</th>
+        <th>b</th>
+        <th>c</th>
+        <th>d</th>
+        <th>e</th>
+        <th>f</th>
+        <th>g</th>
+        <th>h</th>
+        <th></th>
+      </tr>
       <tr v-for="(index, count) in position.board.length / 8" :key="count">
-        <td @click="handleClick(((8 * (7 - count)) + parseInt(idx)))" v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !(idx + count) % 2, selected: selected == ((8 * (7 - count)) + parseInt(idx)), available: isAvailable(((8 * (7 - count)) + parseInt(idx))) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
+        <th>{{8 - count}}</th>
+        <td v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !(idx + count) % 2, selected: selected == ((8 * (7 - count)) + parseInt(idx)), available: isAvailable(((8 * (7 - count)) + parseInt(idx))) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
           <span v-if="value" v-html="charCode(value.side, value.type)"></span>
         </td>
+        <th>{{8 - count}}</th>
+      </tr>
+      <tr>
+        <th></th>
+        <th>a</th>
+        <th>b</th>
+        <th>c</th>
+        <th>d</th>
+        <th>e</th>
+        <th>f</th>
+        <th>g</th>
+        <th>h</th>
+        <th></th>
       </tr>
     </table>
+      </div>
+      <div class="col-sm">
+        <h2>Play History</h2>
+        <play-history :history="history" />
+      </div>
+
+      </div> <!-- row -->
+    </div>
   </div>
 </template>
 
 <script>
+import io from 'socket.io-client';
+import playHistory from './components/play-history'
 let chessRules = require("chess-rules");
-
-let config = require("./config").default;
 
 export default {
   name: "App",
+  components: {
+    'play-history': playHistory
+  },
   data: function() {
     return {
-      rules: chessRules,
       position: null,
-      turn: "W", // Turn dictates who's turn it is
-      selected: null, // Index to select
+      history: [],
+      selected: null,
       availableMoves: []
     };
   },
   computed: {
     status: function() {
-      return this.rules.getGameStatus(this.position);
+      return chessRules.getGameStatus(this.position);
     },
     check: function() {
-      return this.position.check;
+      if(this.position) {
+        return this.position.check;
+      }
+    },
+    turn: function() {
+      if(this.position) {
+        return this.position.turn;
+      }
     }
   },
   created: function() {
-    this.position = this.rules.getInitialPosition();
-    // Set initial game status
-
-    // Create a websocket to twitch
-    this.webSocket = new WebSocket(
-      "wss://" + config.server + ":" + config.port + "/",
-      "irc"
-    );
-
-    this.webSocket.onmessage = this.socketMessage;
-    this.webSocket.onerror = this.socketError;
-    this.webSocket.onclose = this.socketClose;
-    this.webSocket.onopen = this.socketOpen;
+    this.io = new io('http://localhost:3000/');
+    this.io.on('active-position-update', (msg) => {
+      console.log("Received Active Position Update Message")
+      this.position = msg;
+    });
+    this.io.on('active-history-full', (history) => {
+      console.log("Received Active History Full Message")
+      this.history = history;
+    })
+    this.io.on('active-history-update', (update) => {
+      this.history.unshift(update)
+    })
+    this.io.on('connect', () => {
+      console.log("Connected to socket.io backend")
+   });
   },
   methods: {
     socketError (message) {
@@ -88,7 +137,6 @@ export default {
               this.position = this.rules.applyMove(this.position, move)
               // Reset
               this.availableMoves = [];
-              this.selected = null;
               this.turn = this.turn === "W" ? "B" : "W";
               return;
             }
@@ -221,14 +269,13 @@ export default {
   color: #2c3e50;
 }
 
-td {
-  font-size: 48px;
-  cursor: pointer;
-}
-
 #board {
   width: auto;
+  th {
+    font-weight: normal;
+  }
   td {
+    font-size: 48px;
     padding: 0;
     min-height: 48px;
     height: 48px;

@@ -44,6 +44,9 @@
       </div>
       <div class="col-sm">
         <h2>Play History</h2>
+        <div class="alert alert-success">
+          To suggest a move, provide !w for white, or !b for black, followed by PGN formatted move. See: https://en.wikipedia.org/wiki/Portable_Game_Notation
+        </div>
         <play-history :history="history" />
       </div>
 

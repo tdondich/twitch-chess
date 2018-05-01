@@ -5,6 +5,8 @@ const io = require('socket.io')(http);
 const env       = process.env.NODE_ENV || 'development';
 const config    = require(__dirname + '/config/config.json')[env];
 const WebSocketClient = require('websocket').client
+const redis = require("redis")
+
 
 
 function parseMessage(message) {
@@ -53,7 +55,13 @@ let activeGame = {
     rules: require("chess-rules"),
     start() {
         // We're going to start our initial positioning
-        this.position = this.rules.getInitialPosition()
+        if(!this.position) {
+            // No stored game, so let's create one
+            console.log("Creating initial game...")
+            this.position = this.rules.getInitialPosition()
+            // Store the position in redis
+            redisClient.set('active_game', JSON.stringify(this.position))
+        }
         if(io) {
             io.emit('active-position-update', this.position)
         }
@@ -64,6 +72,8 @@ let activeGame = {
         let side = this.position.turn
         let fullPgn = this.rules.moveToPgn(this.position, parsedMove)
         this.position = this.rules.applyMove(this.position, parsedMove)
+        // Store the position in redis
+        redisClient.set('active_game', JSON.stringify(this.position))
         if(io) {
             io.emit('active-position-update', this.position)
         }
@@ -76,6 +86,9 @@ let activeGame = {
             move: JSON.stringify(parsedMove)
         }
         this.history.unshift(historyItem);
+        // Store the position in redis
+        redisClient.set('active_game_history', JSON.stringify(this.history))
+ 
         if(io) {
             io.emit('active-history-update', historyItem)
         }
@@ -86,8 +99,35 @@ let activeGame = {
     }
 };
 
-// Start initial game
-activeGame.start()
+// Connect to redis, and see if there's an active game to fetch
+const redisClient = redis.createClient({
+    host: config.redis_host,
+    port: config.redis_port
+});
+
+redisClient.get("active_game", function (err, reply) {
+    if(err || reply === null) {
+        console.log("No data available, not populating activeGame")
+        // No data or error, go ahead and start
+        startServer()
+        return
+    }
+    // If not an error, we have an active game
+    console.log("Retrieved game state from redis, populating...")
+    let storedGame = JSON.parse(reply)
+    // Also fetch history
+    redisClient.get('active_game_history', function (err, reply) {
+        activeGame.position = storedGame
+        if(reply !== null) {
+            activeGame.history = JSON.parse(reply)
+        } else {
+            activeGame.history = []
+        }
+        startServer()
+        return
+    })
+
+});
 
 
 
@@ -100,7 +140,6 @@ io.on('connection', function(socket){
   });
 
 
-http.listen(3000, () => console.log('Example app listening on port 3000!'))
 
 // Our websocket to twitch.tv
 let webSocket = new WebSocketClient();
@@ -176,14 +215,19 @@ webSocket.on('connect', (connection) => {
     connection.send("NICK " + config.bot_username);
     connection.send('JOIN #adventuresinprogramming')
 
-
 })
 webSocket.on('connectFailed', function(error) {
     console.log('Connect Error: ' + error.toString());
 });
-webSocket.connect("wss://irc-ws.chat.twitch.tv:443/", null, null, null, null);
 
+// We've attempted to fetch from redis, now let's start
+function startServer() {
+    // Start initial game
+    activeGame.start()
+    webSocket.connect("wss://irc-ws.chat.twitch.tv:443/", null, null, null, null);
 
+    http.listen(3000, () => console.log('Twitch Plays Chess listening on port 3000!'))
+}
 
 
 

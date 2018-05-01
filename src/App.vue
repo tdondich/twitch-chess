@@ -1,6 +1,10 @@
 <template>
   <div id="app">
     <h1>Twitch Plays Chess</h1>
+      <div class="alert alert-success">
+        To suggest a move, provide !w for white, or !b for black, followed by PGN formatted move. See: https://en.wikipedia.org/wiki/Portable_Game_Notation
+      </div>
+
     <div v-if="position">
     <p>{{status}} - {{turn == 'B' ? 'Black' : 'White'}}'s Move
       <span class="check" v-if="check">CHECK</span>
@@ -43,11 +47,14 @@
     </table>
       </div>
       <div class="col-sm">
-        <h2>Play History</h2>
-        <div class="alert alert-success">
-          To suggest a move, provide !w for white, or !b for black, followed by PGN formatted move. See: https://en.wikipedia.org/wiki/Portable_Game_Notation
-        </div>
-        <play-history :history="history" />
+        <h2>Available Moves</h2>
+          <ol>
+          <li v-for="(move, index) in availableMoves" :key="index">{{move}} </li>
+          </ol>
+      </div>
+      <div class="col-sm">
+       <h2>Play History</h2>
+       <play-history :history="history" />
       </div>
 
       </div> <!-- row -->
@@ -70,7 +77,7 @@ export default {
       position: null,
       history: [],
       selected: null,
-      availableMoves: []
+      //availableMoves: []
     };
   },
   computed: {
@@ -86,6 +93,15 @@ export default {
       if(this.position) {
         return this.position.turn;
       }
+    },
+    availableMoves: function() {
+      // This will return an array of PGN formatted rules
+      let availableMoves = chessRules.getAvailableMoves(this.position)
+      let results = []
+      for(let move in availableMoves) {
+        results.push(chessRules.moveToPgn(this.position, availableMoves[move]))
+      }
+      return results
     }
   },
   created: function() {
@@ -264,16 +280,22 @@ export default {
 <style lang="scss">
 @import "~bootstrap/scss/bootstrap.scss";
 
+html, body {
+  background-color: black;
+  color: white;
+}
+
 #app {
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
 }
 
 #board {
+  background-color: white;
   width: auto;
+  color: black;
   th {
     font-weight: normal;
   }

@@ -361,7 +361,11 @@ h2 {
 @keyframes moveInLeft {
   0% {
     opacity: 0;
-    transform: translateX(-100px)
+    transform: translateX(-50px)
+  }
+
+  80% {
+    transform: translateX(1px)
   }
 
   100% {

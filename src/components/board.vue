@@ -75,39 +75,68 @@ export default {
         }
       }
     }
- 
+
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.board {
-  background-color: white;
+#board {
   width: auto;
   color: black;
+  border: none;
+  animation: moveInLeft 0.8s ease-out;
   th {
     font-weight: normal;
+    border: none;
+    color: #9E9E9E;
+    font-size: 0.8rem;
   }
   td {
-    font-size: 48px;
-    padding: 0;
-    min-height: 48px;
-    height: 48px;
-    width: 48px;
-    line-height: 48px;
+    font-size: 50px;
+    min-height: 56px;
+    height: 56px;
+    min-width: 56px;
+    width: 56px;
+
+    line-height: 49px;
+    border: none;
+    padding: 0px;
+
   }
   td.black {
-    background-color: grey;
+    background-color: #b58863;
   }
 
   td.white {
-    background-color: white;
+    background-color: #f0d9b5;
   }
   td.selected {
     background-color: red;
   }
   td.available {
     background-color: green;
+  }
+}
+
+
+.check {
+  font-weight: bold;
+}
+
+@keyframes moveInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px)
+  }
+
+  80% {
+    transform: translateX(1px)
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(0);
   }
 }
 

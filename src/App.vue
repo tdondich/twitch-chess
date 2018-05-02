@@ -27,7 +27,7 @@
       </tr>
       <tr v-for="(index, count) in position.board.length / 8" :key="count">
         <th>{{8 - count}}</th>
-        <td v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !(idx + count) % 2, selected: selected == ((8 * (7 - count)) + parseInt(idx)), available: isAvailable(((8 * (7 - count)) + parseInt(idx))) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
+        <td v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !((idx + count) % 2), selected: selected == ((8 * (7 - count)) + parseInt(idx)), available: isAvailable(((8 * (7 - count)) + parseInt(idx))) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
           <span v-if="value" v-html="charCode(value.side, value.type)"></span>
         </td>
         <th>{{8 - count}}</th>
@@ -279,40 +279,70 @@ export default {
 
 <style lang="scss">
 @import "~bootstrap/scss/bootstrap.scss";
+@import url('https://fonts.googleapis.com/css?family=Noto+Sans');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 html, body {
-  background-color: black;
-  color: white;
+  height: 100vh;
+  min-height: 100vh;
+  background: linear-gradient(to right bottom, #212121, #616161);
+  background-attachment:fixed;
+  color: #EEEEEE;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+.alert {
+  font-size: 0.5rem;
 }
 
 #app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-family: 'Noto Sans', "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
 }
 
 #board {
-  background-color: white;
+  // background-color: white;
   width: auto;
   color: black;
+  border: none;
   th {
     font-weight: normal;
+    border: none;
+    color: #9E9E9E;
+    font-size: 0.8rem;
   }
   td {
-    font-size: 48px;
-    padding: 0;
-    min-height: 48px;
-    height: 48px;
-    width: 48px;
-    line-height: 48px;
+    font-size: 50px;
+    min-height: 56px;
+    height: 56px;
+    min-width: 56px;
+    width: 56px;
+
+    line-height: 49px;
+    border: none;
+    padding: 0px;
+
   }
   td.black {
-    background-color: grey;
+    background-color: #b58863;
   }
 
   td.white {
-    background-color: white;
+    background-color: #f0d9b5;
   }
   td.selected {
     background-color: red;
@@ -321,6 +351,7 @@ html, body {
     background-color: green;
   }
 }
+
 
 .check {
   font-weight: bold;

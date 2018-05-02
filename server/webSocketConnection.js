@@ -4,6 +4,8 @@ module.exports = (webSocket, activeGame, app, http, config) => {
   webSocket.on('connect', (twitchConnection) => {
     app.locals.twitchConnection = twitchConnection
 
+    activeGame.setTwitchConnection(twitchConnection)
+
     console.log('Twitch Chat Client Connected')
     twitchConnection.on('error', function (error) {
       console.log('Connection Error: ' + error.toString())
@@ -49,7 +51,30 @@ module.exports = (webSocket, activeGame, app, http, config) => {
           return
         }
         // It's an available move, add to our list of moves or add as a supporter
-        // @todo Check to see if this person already proposed or supported a move
+        // Check to see if this person is in this team or not
+        if(activeGame.inTeam('black', parsed.username)) {
+           // This user belongs to the opposing team
+          twitchConnection.send('PRIVMSG ' + parsed.channel + ' : ' + ' Hey, ' + parsed.username + ', you are a member of the Black team for this game!')
+          return
+        }
+        // If we're here, let's add to the team members for white, if not already in it
+        if(!activeGame.inTeam('white', parsed.username)) {
+          activeGame.addToTeam('white', parsed.username)
+        }
+
+        let found = false;
+        for(move in activeGame.proposals) {
+          if(activeGame.proposals[move].indexOf(parsed.username) !== -1) {
+            found = true;
+            break;
+          }
+        }
+        if(found) {
+          // They already voted!
+          twitchConnection.send('PRIVMSG ' + parsed.channel + ' : ' + ' Hey, ' + parsed.username + ', you already suggested a move for this round!')
+          return
+        }
+
         if (move in activeGame.proposals) {
           // It's an existing proposal, add to the array
           activeGame.proposals[move].push(parsed.username)
@@ -86,8 +111,6 @@ module.exports = (webSocket, activeGame, app, http, config) => {
             src: ((parseInt(matches[1][1]) - 1) * 8) + (matches[1].charCodeAt(0) - 97),
             dst: ((parseInt(matches[2][1]) - 1) * 8) + (matches[2].charCodeAt(0) - 97)
           }
-          console.log('Attempting to parse: ')
-          console.log(move)
           move = activeGame.rules.moveToPgn(activeGame.position, move)
         }
         // Now check to see if it's an available move
@@ -97,7 +120,31 @@ module.exports = (webSocket, activeGame, app, http, config) => {
           return
         }
         // It's an available move, add to our list of moves or add as a supporter
-        // @todo Check to see if this person already proposed or supported a move
+        // Check to see if this person is in this team or not
+        if(activeGame.inTeam('white', parsed.username)) {
+           // This user belongs to the opposing team
+          twitchConnection.send('PRIVMSG ' + parsed.channel + ' : ' + ' Hey, ' + parsed.username + ', you are a member of the White team for this game!')
+          return
+        }
+        // If we're here, let's add to the team members for white, if not already in it
+        if(!activeGame.inTeam('black', parsed.username)) {
+          activeGame.addToTeam('black', parsed.username)
+        }
+
+        let found = false;
+        for(let proposedMove in activeGame.proposals) {
+          if(activeGame.proposals[proposedMove].indexOf(parsed.username) !== -1) {
+            found = true;
+            break;
+          }
+        }
+        if(found) {
+          // They already voted!
+          twitchConnection.send('PRIVMSG ' + parsed.channel + ' : ' + ' Hey, ' + parsed.username + ', you already suggested a move for this round!')
+          return
+        }
+
+
         if (move in activeGame.proposals) {
           // It's an existing proposal, add to the array
           activeGame.proposals[move].push(parsed.username)

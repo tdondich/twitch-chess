@@ -14,7 +14,7 @@
     </tr>
     <tr v-for="(index, count) in position.board.length / 8" :key="count">
       <th>{{8 - count}}</th>
-      <td v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !(idx + count) % 2, selected: selected == ((8 * (7 - count)) + parseInt(idx)), available: isAvailable(((8 * (7 - count)) + parseInt(idx))) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
+      <td v-bind:data-index="((8 * (7 - count)) + parseInt(idx))" :class="{black: (idx + count) % 2, white: !((idx + count) % 2), selected: selected == ((8 * (7 - count)) + parseInt(idx)), available: isAvailable(((8 * (7 - count)) + parseInt(idx))) }" v-for="(value, idx) in position.board.slice(8 * (7 - count), (8 * (7 - count)) + 8)" :key="idx">
         <span v-if="value" v-html="charCode(value.side, value.type)"></span>
       </td>
       <th>{{8 - count}}</th>
@@ -81,7 +81,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-#board {
+.board {
+  text-align: center;
   width: auto;
   color: black;
   border: none;

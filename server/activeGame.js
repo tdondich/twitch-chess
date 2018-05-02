@@ -3,31 +3,74 @@ const chessRules = require('chess-rules')
 module.exports = (io, twitchConnection, redisClient) => {
   // Object that represents our current game
   class ActiveGame {
-    start () {
+
+    constructor() {
+      this.position = null
+      this.history = []
+      this.timer = null
+      this.proposals = []
+      this.rules = chessRules
+      this.teams = {
+        black: [],
+        white: []
+      }
+    }
+
+    start() {
       // We're going to start our initial positioning
       if (!this.position) {
         // No stored game, so let's create one
         console.log('Creating initial game...')
         this.position = this.rules.getInitialPosition()
+       this.history = [];
+        this.teams = {
+          white: [],
+          black: []
+        };
+        this.proposals = []
         // Store the position in redis
         redisClient.set('active_game', JSON.stringify(this.position))
+        redisClient.set('active_game_teams', JSON.stringify(this.teams))
+        redisClient.set('active_game_history', JSON.stringify(this.history))
       }
       if (io) {
         io.emit('active-position-update', this.position)
       }
       // If websocket is connected, let's send a message saying who's turn it is, and how much time is left
-      if (twitchConnection) {
-        twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with 2 minutes to suggest the next move!')
+      if (this.twitchConnection) {
+        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with a minute to suggest the next move!')
       }
       this.timer = setTimeout(() => { this.decideMove() }, 60000)
     }
 
-    decideMove () {
+    setTwitchConnection(connection) {
+      this.twitchConnection = connection
+    }
+
+    /**
+     * Returns a boolean if the username is already a member of a requested team 
+     * @param {*} team 
+     * @param {*} username 
+     */
+    inTeam(team, username) {
+      return this.teams[team].indexOf(username) !== -1
+    }
+
+    addToTeam(team, username) {
+      if (!this.inTeam(team, username)) {
+        this.teams[team].push(username)
+        // Now broadcast updated roster to socket.io connected clients
+        if (io) {
+          io.emit('active-teams-update', this.teams)
+        }
+        // Save in redis
+        redisClient.set('active_game_teams', JSON.stringify(this.teams))
+      }
+    }
+
+    decideMove() {
       let winner = null
-      console.log('Deciding with data: ')
-      console.log(this.proposals)
       for (let key in this.proposals) {
-        console.log('Checking move: ' + key)
         if (winner == null || this.proposals[winner].length < this.proposals[key]) {
           // We have a new winner
           winner = key
@@ -40,20 +83,20 @@ module.exports = (io, twitchConnection, redisClient) => {
         // And let's slice to get the supporters
         let supporters = this.proposals[winner].slice(1)
         // Reset proposals
-        twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : ' + ' Using ' + initiator + "'s " + winner + ' move for ' + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with ' + voteCount + ' votes!')
+        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : ' + ' Using ' + initiator + "'s " + winner + ' move for ' + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with ' + voteCount + ' votes!')
         this.performMove(winner, initiator, supporters)
       } else {
         // Nobody suggested a move, let's re-alert the chatroom and wait again
-        twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : Nobody suggested a move for  ' + (this.position.turn == 'W' ? 'White' : 'Black') + '! Another minute to get your move suggestions!')
+        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : Nobody suggested a move for  ' + (this.position.turn == 'W' ? 'White' : 'Black') + '! Another minute to get your move suggestions!')
         this.timer = setTimeout(() => { this.decideMove() }, 60000)
       }
     }
 
-    performMove (move, username, supporters) {
+    performMove(move, username, supporters) {
       // Performs a move on our board
       let parsedMove = this.rules.pgnToMove(this.position, move)
-      let side = this.position.turn
       let fullPgn = this.rules.moveToPgn(this.position, parsedMove)
+      let turn = this.position.turn;
       this.position = this.rules.applyMove(this.position, parsedMove)
       this.proposals = []
       // Store the position in redis
@@ -63,6 +106,7 @@ module.exports = (io, twitchConnection, redisClient) => {
       }
       // Now add the move to the history log
       let historyItem = {
+        turn: turn,
         createdAt: new Date(),
         username: username,
         position_model: JSON.stringify(this.position),
@@ -78,23 +122,91 @@ module.exports = (io, twitchConnection, redisClient) => {
         io.emit('active-history-update', historyItem)
       }
 
-      // @todo check for game completion, check, etc
-      // Now announce which side turn it's on and then start the timer
-      twitchConnection.send('PRIVMSG #adventuresinprogramming ' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with a minute to suggest the next move!')
-      this.timer = setTimeout(() => { this.decideMove() }, 60000)
+      // Check for game completion
+      if (['WHITEWON', 'BLACKWON', 'PAT'].indexOf(this.rules.getGameStatus(this.position)) !== -1) {
+        // Our game is finished! Let's tally up points and send a scoreboard
+        let scores = this.calculateScoreboard(this.rules.getGameStatus(this.position)[0])
+        // Send the scoreboard to the socketio
+        io.emit('active-scoreboard-update', scores)
+
+        if(this.rules.getGameStatus(this.position) !== 'PAT') {
+          this.twitchConnection.send('PRIVMSG #adventuresinprogramming ' + ' : ' + " Congratulations to the " + (this.position.turn == 'B' ? 'White' : 'Black') + ' team for winning! A new game is starting soon...')
+        } else {
+          this.twitchConnection.send('PRIVMSG #adventuresinprogramming ' + ' : It\s a stalemate! A new game is starting soon...')
+        }
+
+        // Set timer to reset everything
+        setTimeout(() => {
+          this.position = null,
+          this.start()
+        }, 30000)
+
+      } else {
+        // Now announce which side turn it's on and then start the timer
+        this.twitchConnection.send('PRIVMSG #adventuresinprogramming ' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with a minute to suggest the next move!')
+        this.timer = setTimeout(() => { this.decideMove() }, 60000)
+      }
     }
 
-    availableMove (move) {
+    calculateScoreboard(side) {
+      let scores = []
+      for (let historyItem of this.history) {
+        // This is for the winning team
+        if(historyItem.turn !== side) {
+          continue
+        }
+        // iterate through array
+        let item = null;
+        for (let score of scores) {
+          if (score.username == historyItem.username) {
+            item = score;
+          }
+        }
+        if (!item) {
+          scores.push({
+            username: historyItem.username,
+            points: 2
+          })
+        } else {
+          item.points += 2
+        }
+
+        if (historyItem.supporters) {
+          for (let supporter of historyItem.supporters) {
+            let item = null;
+            for (let score of scores) {
+              if (score.username == supporter) {
+                item = score;
+              }
+            }
+            if (!item) {
+              scores.push({
+                username: supporter,
+                points: 1
+              })
+            } else {
+              item.points += 1
+            }
+          }
+        }
+      }
+      // Sort
+      scores.sort(function(a,b) {
+        if(a.points < b.points) {
+          return 1;
+        } else if(a.points === b.points) {
+          return 0;
+        }
+        return -1;
+      });
+      return scores;
+    }
+
+    availableMove(move) {
       // Checks to see if a provided move is available
       return this.rules.pgnToMove(this.position, move) !== null
     }
   }
-
-  ActiveGame.position = null
-  ActiveGame.history = []
-  ActiveGame.timer = null
-  ActiveGame.proposals = []
-  ActiveGame.rules = chessRules
 
   return ActiveGame
 }

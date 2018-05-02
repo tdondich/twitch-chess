@@ -4,7 +4,7 @@
     <p>
     Join our
     <a href="https://www.twitch.tv/adventuresinprogramming/">twitch.tv channel</a>. In chat, you can vote for your chosen side's move by using the
-    <router-link to="/help">hot commands and move text.</router-link>.
+    <router-link to="/help">hot commands and move text</router-link>.
     </p>
 
     <div v-if="position">
@@ -12,22 +12,60 @@
         <div class="col-sm">
           <board :position="position" :availableMoves="availableMoves"></board>
         </div>
-        <div class="col-sm">
-          <h4>{{status}} - {{turn == 'B' ? 'Black' : 'White'}}'s Move
+
+        <div v-if="!scoreboard" class="col-sm">
+          <h4>{{turn == 'B' ? 'Black' : 'White'}}'s Turn
             <span class="check" v-if="check">CHECK</span>
           </h4>
+          <hr>
+
+          <!-- teams -->
+          <div class="row teams">
+            <div class="col-sm">
+              <h5>White Team</h5>
+              <div v-for="(username, index) in teams.white.slice(0, 10)" :key="index">{{username}}</div>
+              <div v-if="teams.white.length > 10">+{{teams.white.length - 10}} more</div>
+            </div>
+            <div class="col-sm">
+              <h5>Black Team</h5>
+              <div v-for="(username, index) in teams.black.slice(0, 10)" :key="index">{{username}}</div>
+              <div v-if="teams.black.length > 10">+{{teams.black.length - 10}} more</div>
+            </div>
+          </div>
+          <hr>
+
+
+
           <div class="row">
             <div class="col-sm">
               <h5>Available Moves</h5>
-              <ol>
-                <li v-for="(move, index) in availableMoves" :key="index">{{move}} </li>
-              </ol>
+                <span v-for="(move, index) in availableMoves" :key="index">{{move}}<span v-if="index < (availableMoves.length - 1)">, </span></span>
             </div>
             <div class="col-sm">
-              <h5>Play History</h5>
+              <h5>Recent Play History</h5>
               <play-history :history="history" />
             </div>
           </div>
+        </div>
+
+        <div class="col-sm" v-else>
+          <!-- Game completed, show coreboard -->
+          <h3 v-if="status == 'WHITEWON'">White Team Wins!</h3>
+          <h3 v-if="status == 'BLACKWON'">Black Team Wins!</h3>
+          <h3 v-if="status == 'PAT'">It's a Stalemate!</h3>
+          <p class="small">
+            A new game is starting in just a few minutes!
+          </p>
+          <p class="small">
+          Users who initiated a move scored two points for each. Each supporter scored a point for each move.
+          </p>
+          <table class="table table-sm">
+            <tr v-for="(score, index) in scoreboard" :key="index">
+              <td class="username">{{score.username}}</td>
+              <td class="points">{{score.points}}</td>
+            </tr>
+          </table>
+
         </div>
         <!-- row -->
       </div>
@@ -55,6 +93,7 @@ export default {
       position: null,
       history: [],
       selected: null,
+      scoreboard: null,
       teams: {
         black: [],
         white: []
@@ -89,12 +128,20 @@ export default {
     this.io = new io(config["socketio_host"]);
     this.io.on("active-position-update", msg => {
       this.position = msg;
+      // Reset and remove scoreboard
+      this.scoreboard = null
     });
     this.io.on("active-history-full", history => {
       this.history = history;
     });
     this.io.on("active-history-update", update => {
       this.history.unshift(update);
+    });
+    this.io.on("active-teams-update", update => {
+      this.teams = update;
+    })
+    this.io.on("active-scoreboard-update", update => {
+      this.scoreboard = update
     });
     this.io.on("connect", () => {
       // Nothing needed here
@@ -104,6 +151,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+.teams {
+  margin-bottom: 24px;
+}
+
+hr {
+  border-top: 1px solid grey;
+}
+
+td.points {
+  text-align: right;
+}
 
 </style>
 

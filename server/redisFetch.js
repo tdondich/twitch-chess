@@ -18,7 +18,17 @@ module.exports = (redisClient, activeGame, webSocket) => {
       } else {
         activeGame.history = []
       }
-      connectTwitch(webSocket)
+      redisClient.get('active_game_teams', function (err, reply) {
+        if (reply !== null) {
+          activeGame.teams = JSON.parse(reply)
+        } else {
+          activeGame.teams = {
+            black: [],
+            white: []
+          }
+        }
+        connectTwitch(webSocket)
+      })
     })
   })
 }

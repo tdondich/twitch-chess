@@ -303,6 +303,7 @@ h2 {
   font-size: 1.5rem;
 }
 
+
 .alert {
   font-size: 0.5rem;
 }
@@ -315,10 +316,10 @@ h2 {
 }
 
 #board {
-  // background-color: white;
   width: auto;
   color: black;
   border: none;
+  animation: moveInLeft 0.8s ease-out;
   th {
     font-weight: normal;
     border: none;
@@ -356,4 +357,18 @@ h2 {
 .check {
   font-weight: bold;
 }
+
+@keyframes moveInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px)
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(0);
+  }
+}
+
+
 </style>

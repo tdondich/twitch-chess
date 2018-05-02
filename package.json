@@ -30,6 +30,7 @@
     "sqlite3": "^4.0.0",
     "twitch-bot": "^1.2.5",
     "vue": "^2.5.2",
+    "vue-router": "^3.0.1",
     "websocket": "^1.0.26"
   },
   "devDependencies": {

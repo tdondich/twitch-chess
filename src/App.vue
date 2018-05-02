@@ -39,11 +39,34 @@ export default {
 
 <style lang="scss">
 @import "~bootstrap/scss/bootstrap.scss";
+@import url('https://fonts.googleapis.com/css?family=Noto+Sans');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 html,
 body {
-  background-color: black;
-  color: white;
+  font-family: 'Noto Sans', "Avenir", Helvetica, Arial, sans-serif;
+  height: 100vh;
+  min-height: 100vh;
+  background: linear-gradient(to right bottom, black, #616161);
+  background-attachment:fixed;
+  color: #EEEEEE;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+.alert {
+  font-size: 0.5rem;
 }
 
 #app {

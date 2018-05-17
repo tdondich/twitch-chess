@@ -35,12 +35,14 @@ module.exports = (io, twitchConnection, redisClient) => {
       }
       if (io) {
         io.emit('active-position-update', this.position)
+        io.emit('active-history-full', this.history)
+        io.emit('active-teams-update', this.teams)
       }
       // If websocket is connected, let's send a message saying who's turn it is, and how much time is left
       if (this.twitchConnection) {
-        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with a minute to suggest the next move!')
+        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with 45 seconds to suggest the next move!')
       }
-      this.timer = setTimeout(() => { this.decideMove() }, 60000)
+      this.timer = setTimeout(() => { this.decideMove() }, 45000)
     }
 
     setTwitchConnection(connection) {
@@ -87,8 +89,8 @@ module.exports = (io, twitchConnection, redisClient) => {
         this.performMove(winner, initiator, supporters)
       } else {
         // Nobody suggested a move, let's re-alert the chatroom and wait again
-        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : Nobody suggested a move for  ' + (this.position.turn == 'W' ? 'White' : 'Black') + '! Another minute to get your move suggestions!')
-        this.timer = setTimeout(() => { this.decideMove() }, 60000)
+        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : Nobody suggested a move for  ' + (this.position.turn == 'W' ? 'White' : 'Black') + '! Another 45 seconds to get your move suggestions!')
+        this.timer = setTimeout(() => { this.decideMove() }, 45000)
       }
     }
 
@@ -139,12 +141,12 @@ module.exports = (io, twitchConnection, redisClient) => {
         setTimeout(() => {
           this.position = null,
           this.start()
-        }, 30000)
+        }, 60000)
 
       } else {
         // Now announce which side turn it's on and then start the timer
-        this.twitchConnection.send('PRIVMSG #adventuresinprogramming ' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with a minute to suggest the next move!')
-        this.timer = setTimeout(() => { this.decideMove() }, 60000)
+        this.twitchConnection.send('PRIVMSG #adventuresinprogramming ' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with 45 seconds to suggest the next move!')
+        this.timer = setTimeout(() => { this.decideMove() }, 45000)
       }
     }
 

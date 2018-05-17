@@ -1,3 +1,21 @@
+var port = normalizePort(process.env.PORT || '3000');
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
 exports.parseMessage = (message) => {
   let rawMessage = message.utf8Data
 
@@ -45,5 +63,5 @@ exports.startServer = (activeGame, http) => {
   // Start initial game
   activeGame.start()
 
-  http.listen(3000, () => console.log('Twitch Plays Chess listening on port 3000!'))
+  http.listen(port, () => console.log('Twitch Plays Chess listening on port ' + port + '!!!'))
 }

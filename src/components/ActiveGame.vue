@@ -1,10 +1,16 @@
 <template>
   <div>
-    <h3>Want to play?</h3>
+    <h3>Greetings, Want to play?</h3>
+    <!--
     <p>
     Join our
     <a href="https://www.twitch.tv/adventuresinprogramming/">twitch.tv channel</a>. In chat, you can vote for your chosen side's move by using the
     <router-link to="/help">hot commands and move text</router-link>.
+    </p>
+    -->
+    <p class="">
+      We're testing the game out all night! Use !b or !w to dictate what color you want to suggest a move for. Then use Portable Game Notation to state what 
+      move you want to suggest. The suggested move with the most moves is executed!
     </p>
 
     <div v-if="position">
@@ -163,6 +169,7 @@ hr {
 td.points {
   text-align: right;
 }
+
 
 </style>
 

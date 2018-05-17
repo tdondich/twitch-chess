@@ -5,6 +5,7 @@
         <router-link to="/"><img src="./assets/logo.png" alt="Twitch Plays Chess"></router-link>
       </div>
     </div>
+    <!--
     <div class="row links">
       <div class="col-sm">
         <ul class="nav justify-content-center">
@@ -20,6 +21,7 @@
         </ul>
       </div>
     </div>
+    -->
 
     <div class="row">
       <div class="col-sm">
@@ -65,17 +67,14 @@ h2 {
   font-size: 1.5rem;
 }
 
-.alert {
-  font-size: 0.5rem;
-}
-
 #app {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
   .brand {
     text-align: center;
-    margin-top: 8px;
+    margin-top: 40px;
+    margin-bottom: 8px;
   }
 
   .links {

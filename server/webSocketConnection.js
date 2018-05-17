@@ -63,8 +63,8 @@ module.exports = (webSocket, activeGame, app, http, config) => {
         }
 
         let found = false;
-        for(move in activeGame.proposals) {
-          if(activeGame.proposals[move].indexOf(parsed.username) !== -1) {
+        for(let proposedMove in activeGame.proposals) {
+          if(activeGame.proposals[proposedMove].indexOf(parsed.username) !== -1) {
             found = true;
             break;
           }

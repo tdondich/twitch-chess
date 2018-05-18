@@ -8,13 +8,14 @@
     "unit": "jest --config test/unit/jest.conf.js --coverage",
     "test": "npm run unit",
     "lint": "eslint --ext .js,.vue src test/unit",
-    "build": "node build/build.js",
+    "build": "webpack",
     "dev": "node server.js",
-    "start": "NODE_ENV=production node server.js"
+    "start": "cross-env NODE_ENV=production node server.js"
   },
   "dependencies": {
     "chess-rules": "^1.1.0",
     "colors": "^1.2.5",
+    "cross-env": "^5.1.5",
     "ejs": "^2.6.1",
     "jquery": "^3.3.1",
     "moment": "^2.22.1",

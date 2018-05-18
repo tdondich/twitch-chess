@@ -170,7 +170,7 @@ module.exports = (webSocket, activeGame, app, http, config) => {
     )
     twitchConnection.send('PASS ' + config.bot_password)
     twitchConnection.send('NICK ' + config.bot_username)
-    twitchConnection.send('JOIN #adventuresinprogramming')
+    twitchConnection.send('JOIN ' + config.roomId)
 
     startServer(activeGame, http)
   })

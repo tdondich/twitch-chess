@@ -1,0 +1,36 @@
+{
+  "development": {
+    "db_username": "root",
+    "db_password": null,
+    "db_database": "twitchchess",
+    "db_host": "127.0.0.1",
+    "db_dialect": "sqlite",
+    "db_storage": "storage/twitchchess.sqlite",
+    "bot_username": "aipchessbot",
+    "bot_password": "oauth:yr2wnsn3ensylhghuejkxwyfhufqx8",
+    "redis_host": "localhost",
+    "redis_port": 6379,
+    "socketio_host": "http://localhost:3000",
+    "roomId": "#chatrooms:192445075:a266c92d-39ad-4ac1-9451-b516b680ac4c"
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "db_username": "%%DB_USERNAME%%",
+    "db_password": "%%DB_PASSWORD%%",
+    "db_database": "%%DB_DATABASE%%",
+    "db_host": "%%DB_HOST%%",
+    "db_dialect": "mysql",
+    "bot_username": "%%BOT_USERNAME%%",
+    "bot_password": "%%BOT_PASSWORD%%",
+    "redis_host": "%%REDIS_HOST",
+    "redis_port": %%REDIS_PORT%%,
+    "socketio_host": "%%SOCKETIO_HOST%%",
+    "roomId": "%%ROOM_ID%%"
+  }
+}

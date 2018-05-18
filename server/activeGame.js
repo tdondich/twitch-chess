@@ -1,6 +1,6 @@
 const chessRules = require('chess-rules')
 
-module.exports = (io, twitchConnection, redisClient) => {
+module.exports = (config, io, twitchConnection, redisClient) => {
   // Object that represents our current game
   class ActiveGame {
 
@@ -40,7 +40,7 @@ module.exports = (io, twitchConnection, redisClient) => {
       }
       // If websocket is connected, let's send a message saying who's turn it is, and how much time is left
       if (this.twitchConnection) {
-        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with 45 seconds to suggest the next move!')
+        this.twitchConnection.send('PRIVMSG ' + config.roomId + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with 45 seconds to suggest the next move!')
       }
       this.timer = setTimeout(() => { this.decideMove() }, 45000)
     }
@@ -85,11 +85,11 @@ module.exports = (io, twitchConnection, redisClient) => {
         // And let's slice to get the supporters
         let supporters = this.proposals[winner].slice(1)
         // Reset proposals
-        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : ' + ' Using ' + initiator + "'s " + winner + ' move for ' + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with ' + voteCount + ' votes!')
+        this.twitchConnection.send('PRIVMSG ' + config.roomId + ' : ' + ' Using ' + initiator + "'s " + winner + ' move for ' + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with ' + voteCount + ' votes!')
         this.performMove(winner, initiator, supporters)
       } else {
         // Nobody suggested a move, let's re-alert the chatroom and wait again
-        this.twitchConnection.send('PRIVMSG #adventuresinprogramming' + ' : Nobody suggested a move for  ' + (this.position.turn == 'W' ? 'White' : 'Black') + '! Another 45 seconds to get your move suggestions!')
+        this.twitchConnection.send('PRIVMSG ' + config.roomId + ' : Nobody suggested a move for  ' + (this.position.turn == 'W' ? 'White' : 'Black') + '! Another 45 seconds to get your move suggestions!')
         this.timer = setTimeout(() => { this.decideMove() }, 45000)
       }
     }
@@ -132,9 +132,9 @@ module.exports = (io, twitchConnection, redisClient) => {
         io.emit('active-scoreboard-update', scores)
 
         if(this.rules.getGameStatus(this.position) !== 'PAT') {
-          this.twitchConnection.send('PRIVMSG #adventuresinprogramming ' + ' : ' + " Congratulations to the " + (this.position.turn == 'B' ? 'White' : 'Black') + ' team for winning! A new game is starting soon...')
+          this.twitchConnection.send('PRIVMSG  ' + config.roomId + ' : ' + " Congratulations to the " + (this.position.turn == 'B' ? 'White' : 'Black') + ' team for winning! A new game is starting soon...')
         } else {
-          this.twitchConnection.send('PRIVMSG #adventuresinprogramming ' + ' : It\s a stalemate! A new game is starting soon...')
+          this.twitchConnection.send('PRIVMSG  ' + config.roomId + ' : It\s a stalemate! A new game is starting soon...')
         }
 
         // Set timer to reset everything
@@ -145,7 +145,7 @@ module.exports = (io, twitchConnection, redisClient) => {
 
       } else {
         // Now announce which side turn it's on and then start the timer
-        this.twitchConnection.send('PRIVMSG #adventuresinprogramming ' + ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with 45 seconds to suggest the next move!')
+        this.twitchConnection.send('PRIVMSG  ' + config.roomId +  ' : ' + " It's " + (this.position.turn == 'W' ? 'White\'s' : 'Black\'s') + ' turn with 45 seconds to suggest the next move!')
         this.timer = setTimeout(() => { this.decideMove() }, 45000)
       }
     }

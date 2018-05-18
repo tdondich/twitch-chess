@@ -34,7 +34,7 @@ if(env == 'development') {
     publicPath: config.output.publicPath
     }));
 } else {
-    app.use('/dist', express.static('dist'))
+    app.use('/dist/', express.static('dist'))
 }
 
 app.locals.twitchConnection = null;
@@ -58,7 +58,7 @@ redisClient.on('ready', () => {
     console.log("Redis connected, initializing our active game.");
 });
 
-const ActiveGame = require('./server/activeGame')(io, app.locals.twitchConnection, redisClient);
+const ActiveGame = require('./server/activeGame')(config, io, app.locals.twitchConnection, redisClient);
 const activeGame = new ActiveGame();
 
 // see if there's an active game to fetch from redis

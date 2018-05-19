@@ -8,7 +8,7 @@
     "unit": "jest --config test/unit/jest.conf.js --coverage",
     "test": "npm run unit",
     "lint": "eslint --ext .js,.vue src test/unit",
-    "build": "webpack",
+    "build": "cross-env NODE_ENV=production webpack",
     "dev": "node server.js",
     "start": "cross-env NODE_ENV=production node server.js",
     "install": "find ./node_modules/* -mtime +10950 -exec touch {} \\;"

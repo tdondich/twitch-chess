@@ -2,9 +2,8 @@
   <div>
     <h3>Greetings, Want to play?</h3>
     <p>
-    Join our
-    <a href="https://www.twitch.tv/adventuresinprogramming/" target="_blank">twitch.tv channel</a>. In stream, join the <em>twitchplayschess</em>
-    chat room.  You can vote for your chosen side's move by using !b or !w to dictate what color you want to suggest a move for. Then use Portable Game Notation to state what 
+    Join the <a href="https://www.twitch.tv/adventuresinprogramming/" target="_blank">adventuresinprogramming</a> twitch.tv channel.
+    . In stream, join the <em>twitchplayschess</em> chat room.  You can also visit www.twitchplayschess.com ! You can vote for your chosen side's move by using !b or !w to dictate what color you want to suggest a move for. Then use Portable Game Notation to state what 
       move you want to suggest. The suggested move with the most moves is executed!
       <br>
       <br>

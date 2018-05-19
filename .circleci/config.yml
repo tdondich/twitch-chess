@@ -40,6 +40,21 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
+
+      - run:
+          name: Prepare Configuration File for Deployment
+          command: |
+            cp config/config.example.json config/config.json
+            sed -i "s/%%DB_USERNAME%%/$DB_USERNAME/g" config/config.json
+            sed -i "s/%%DB_PASSWORD%%/$DB_PASSWORD/g" config/config.json
+            sed -i "s/%%DB_DATABASE%%/$DB_DATABASE/g" config/config.json
+            sed -i "s/%%DB_HOST%%/$DB_HOST/g" config/config.json
+            sed -i "s/%%BOT_USERNAME%%/$BOT_USERNAME/g" config/config.json
+            sed -i "s/%%BOT_PASSWORD%%/$BOT_PASSWORD/g" config/config.json
+            sed -i "s/%%REDIS_HOST%%/$REDIS_HOST/g" config/config.json
+            sed -i "s/%%REDIS_PORT%%/$REDIS_PORT/g" config/config.json
+            sed -i "s/%%SOCKETIO_HOST%%/$SOCKETIO_HOST/g" config/config.json
+            sed -i "s/%%ROOM_ID%%/$ROOM_ID/g" config/config.json
         
       - run:
           name: Deploying

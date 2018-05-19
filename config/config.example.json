@@ -28,7 +28,7 @@
     "db_dialect": "mysql",
     "bot_username": "%%BOT_USERNAME%%",
     "bot_password": "%%BOT_PASSWORD%%",
-    "redis_host": "%%REDIS_HOST",
+    "redis_host": "%%REDIS_HOST%%",
     "redis_port": %%REDIS_PORT%%,
     "socketio_host": "%%SOCKETIO_HOST%%",
     "roomId": "%%ROOM_ID%%"
